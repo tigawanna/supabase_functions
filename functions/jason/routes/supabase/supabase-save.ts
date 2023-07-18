@@ -35,6 +35,7 @@ supabasepkgsRouter
       ctx.response.body = error;
     }
   })
+  
   .post("/update", async (ctx) => {
     try {
       const authHeader = ctx.request.headers.get("Authorization");

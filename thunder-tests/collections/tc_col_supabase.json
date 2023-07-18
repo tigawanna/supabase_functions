@@ -38,6 +38,34 @@
                 }
             ],
             "tests": []
+        },
+        {
+            "_id": "fcf09f1b-e208-4ff6-b544-cd2d15137b6a",
+            "colId": "29623666-99fb-41e8-941b-683518834ddf",
+            "containerId": "cd8fa29c-1066-423e-9d8d-986da158158f",
+            "name": "all repos",
+            "url": "/repos",
+            "method": "GET",
+            "sortNum": 30000,
+            "created": "2023-07-18T05:08:25.938Z",
+            "modified": "2023-07-18T05:08:33.589Z",
+            "headers": [],
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "fa24146b-d308-460b-a974-2eb358b0123c",
+            "colId": "29623666-99fb-41e8-941b-683518834ddf",
+            "containerId": "cd8fa29c-1066-423e-9d8d-986da158158f",
+            "name": "all repos Copy",
+            "url": "/repos/slice",
+            "method": "GET",
+            "sortNum": 40000,
+            "created": "2023-07-18T05:18:29.141Z",
+            "modified": "2023-07-18T05:18:50.788Z",
+            "headers": [],
+            "params": [],
+            "tests": []
         }
     ],
     "settings": {

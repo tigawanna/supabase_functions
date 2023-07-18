@@ -1,4 +1,4 @@
-import { logError } from "../../../utils/loggers.ts";
+import { logError, logInfo } from "../../../utils/loggers.ts";
 import { IGithubViewer,ViewerRepos,BadDataGitHubError } from "./types.ts";
 
 export async function getGithubViewer(viewer_token: string) {
@@ -26,17 +26,27 @@ export async function getGithubViewer(viewer_token: string) {
     }
 }
 
-export async function getViewerRepos(viewer_token: string,first=100) {
+export async function getViewerRepos(viewer_token: string,after:string|null,limit=50) {
     // console.log("viewerr token  === ", viewer_token)
     const query = `
-    query($first: Int!) {
+    query($first: Int!, $after: String) {
     viewer {
-    repositories(first:$first,isFork: false, orderBy: {field: PUSHED_AT, direction: DESC}) {
-      nodes {
+    repositories(first:$first,after: $after,isFork: false, orderBy: {field: PUSHED_AT, direction: DESC}) {
+    totalCount
+    pageInfo{
+        endCursor
+        startCursor
+      }
+    edges {
+    cursor
+      node {
         id
         name
         nameWithOwner
       }
+    }    
+
+    
     }
   }
 }
@@ -53,19 +63,20 @@ export async function getViewerRepos(viewer_token: string,first=100) {
             body: JSON.stringify({
                 query,
                 variables: {
-                    first
+                    first:limit,
+                    after:after
                 },
                 // operationName,
             }),
         })
         const data = await response.json() as unknown as ViewerRepos
-
+    //    logInfo("all user repositories ===== ", data)
 
         if ("message" in data) {
             logError("throw error fetching viewer repos  ==> ", data)
             throw data
         }
-        logError("all user repositories ===== ", data)
+      
         return data
 
     } catch (err) {

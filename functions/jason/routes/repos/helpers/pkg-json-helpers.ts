@@ -1,4 +1,5 @@
-import { logError } from "../../../utils/loggers.ts";
+// deno-lint-ignore-file ban-ts-comment
+import { logError, logInfo } from "../../../utils/loggers.ts";
 import { getViewerRepos } from "./repos-helpers.ts";
 import { DecodedPackageJson } from "./types.ts";
 import { pkgTypeCondition } from "./whatFramework.ts";
@@ -63,6 +64,9 @@ export function modifyPackageJson(pgkjson: DecodedPackageJson) {
     console.log("typeCondition", typeCondition);
     pgkjson["pkg_type"] = typeCondition.pkg_type;
 
+    if (!pgkjson.dependencies || !pgkjson.devDependencies) {
+      return pgkjson;
+    }
     const alldeps = Object.keys(pgkjson.dependencies)
       .map((key) => {
         return key.split("^")[0];
@@ -88,46 +92,64 @@ export function modifyPackageJson(pgkjson: DecodedPackageJson) {
 export async function recursiveFetchAllRepoPkgs(
   viewerToken: string,
   reposPkgJson: DecodedPackageJson[] = [],
-  limit = 100,
+  after: string | null = null,
+  limit = 3,
 ): Promise<DecodedPackageJson[]> {
+  logInfo("recursive cursor =", after);
   try {
-    const all_repos = await getViewerRepos(viewerToken, limit);
-    if (
-      all_repos &&
-      ("message" in all_repos || !(all_repos && "data" in all_repos))
-    ) {
-      logError("error loading  viewer repos  ==> ", all_repos);
-      throw new Error("error loading  viewer repos : " + all_repos.message);
-    }
-    const reposList = all_repos.data.viewer.repositories.nodes;
+    const all_repos = await getViewerRepos(viewerToken, after, limit);
+    // logInfo("before error check", all_repos);
 
-    for await (const repo of reposList) {
+    if ("message" in all_repos || !("data" in all_repos)) {
+      logError("error loading viewer repos ==> ", all_repos);
+      throw new Error("error loading viewer repos: " + all_repos.message);
+    }
+    const reposList = all_repos.data.viewer.repositories.edges.map(
+      (edge: any) => edge.node,
+    );
+
+    const repoPromises = reposList.map(async (repo: any) => {
       const pkgjson = await getOneRepoPackageJson(
         repo.nameWithOwner,
         viewerToken,
       );
-      if (pkgjson) {
-        reposPkgJson.push(pkgjson);
+      logInfo("repo name with owner in repo list", repo.nameWithOwner);
+      if (pkgjson && "name" in pkgjson) {
+        logInfo("pkgjson in repo list", pkgjson.name);
+        return pkgjson;
       }
-    }
+    });
+    // logInfo("repoPromises", repoPromises);
 
+    const resolvedReposPkgJson = (await Promise.allSettled(repoPromises))
+      .filter(
+        (data) => (data.status === "fulfilled" && (data.value)),
+        // @ts-expect-error
+      ).map((data) => data.value as DecodedPackageJson);
+    // logInfo("resolvedReposPkgJson", resolvedReposPkgJson);
+    const newReposPkgJson = reposPkgJson.concat(resolvedReposPkgJson);
     // Check if the array size matches the totalCount value
-    if (reposPkgJson.length < all_repos.data.viewer.repositories.totalCount) {
+    if (newReposPkgJson.length < 3) {
+      const next_cursor = all_repos.data.viewer.repositories.pageInfo.endCursor;
       // Fetch the next page of repositories
-      return recursiveFetchAllRepoPkgs(viewerToken, reposPkgJson, limit + 100);
+      logInfo("still less than total count refetching with =", next_cursor);
+      return recursiveFetchAllRepoPkgs(
+        viewerToken,
+        newReposPkgJson,
+        next_cursor,
+      );
     }
-
-    return reposPkgJson;
+    // logSuccess("newReposPkgJson", newReposPkgJson);
+    return newReposPkgJson;
   } catch (error) {
     logError("error recursiveFetchAllRepos", error);
     throw error;
   }
 }
 
-
 export async function computeAllPkgJsons(viewer_token: string) {
   try {
-    const all_repos = await getViewerRepos(viewer_token);
+    const all_repos = await getViewerRepos(viewer_token, null);
 
     if (
       all_repos &&
@@ -139,11 +161,11 @@ export async function computeAllPkgJsons(viewer_token: string) {
 
     const reposPkgJson: DecodedPackageJson[] = [];
     const totalConut = all_repos.data.viewer.repositories.totalCount;
-    const reposList = all_repos.data.viewer.repositories.nodes;
+    const reposList = all_repos.data.viewer.repositories.edges;
 
     for await (const repo of reposList) {
       const pkgjson = await getOneRepoPackageJson(
-        repo.nameWithOwner,
+        repo.node.nameWithOwner,
         viewer_token,
       );
       if (pkgjson) {
