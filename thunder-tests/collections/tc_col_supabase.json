@@ -1,0 +1,48 @@
+{
+    "_id": "29623666-99fb-41e8-941b-683518834ddf",
+    "colName": "supabase",
+    "created": "2023-07-18T03:20:40.261Z",
+    "sortNum": 10000,
+    "folders": [
+        {
+            "_id": "cd8fa29c-1066-423e-9d8d-986da158158f",
+            "name": "jason",
+            "containerId": "",
+            "created": "2023-07-18T03:20:54.492Z",
+            "sortNum": 10000,
+            "settings": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": "{{GHP}}"
+                }
+            }
+        }
+    ],
+    "requests": [
+        {
+            "_id": "b3e23712-b00d-4ee9-a716-de042bed17bb",
+            "colId": "29623666-99fb-41e8-941b-683518834ddf",
+            "containerId": "cd8fa29c-1066-423e-9d8d-986da158158f",
+            "name": "get-pkg-json",
+            "url": "/pkg?nwo=tigawanna/tigawanna",
+            "method": "GET",
+            "sortNum": 10000,
+            "created": "2023-07-18T03:21:11.186Z",
+            "modified": "2023-07-18T03:56:35.175Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "nwo",
+                    "value": "tigawanna/tigawanna",
+                    "isPath": false
+                }
+            ],
+            "tests": []
+        }
+    ],
+    "settings": {
+        "options": {
+            "baseUrl": "http://localhost:8000"
+        }
+    }
+}
